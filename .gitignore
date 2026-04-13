@@ -1,0 +1,6 @@
+.trae/
+.idea/
+.github/
+*.iml
+.zed/
+docs/

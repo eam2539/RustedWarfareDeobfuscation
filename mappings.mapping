@@ -1,32 +1,30 @@
 CLASS a/a/a net/rudp/socket/RawSocket
 	METHOD a onBytesReceived ([BI)V
 CLASS a/a/a/a net/rudp/impl/ACKSegment
+	METHOD <init> (II)V
+		ARG 1 seq
 CLASS a/a/a/b net/rudp/impl/DATSegment
 	FIELD a payload [B
-	METHOD b getLength ()I
 	METHOD c getPayloadBytes ()[B
 CLASS a/a/a/c net/rudp/impl/EAKSegment
 	FIELD a selectiveAckSequenceList [I
 	METHOD c getSelectiveAckList ()[I
-CLASS a/a/a/d com/corrodinggames/rts/gameFramework/net/FinalizationPacket
-	METHOD a getPacketType ()Ljava/lang/String;
+CLASS a/a/a/d net/rudp/impl/FINSegment
 CLASS a/a/a/e net/rudp/impl/NULSegment
-CLASS a/a/a/f com/corrodinggames/rts/gameFramework/net/ResetPacket
-CLASS a/a/a/g com/corrodinggames/rts/gameFramework/net/SynchronizationPacket
+CLASS a/a/a/f net/rudp/impl/RSTSegment
+CLASS a/a/a/g net/rudp/impl/SYNSegment
 	FIELD a rudpVersion I
 	FIELD b gameVersion I
 	FIELD c optionFlags I
 	FIELD d maxSegmentSize I
 	FIELD e retransmissionTimeoutMs I
 	FIELD f cumulativeAckTimeoutMs I
-	FIELD g nullPacketTimeoutMs I
+	FIELD g nullSegmentTimeoutMs I
 	FIELD h maxRetransmissions I
 	FIELD i maxCumulativeAcks I
-	FIELD j maxOutOfOrderPackets I
+	FIELD j maxOutOfOrderSegments I
 	FIELD k maxAutoResets I
-	METHOD a deserializePayload ([BII)V
 	METHOD c getGameVersion ()I
-	METHOD d serialize ()[B
 	METHOD e getMaxSegmentSize ()I
 	METHOD f getRetransmissionTimeoutMs ()I
 	METHOD g getCumulativeAckTimeoutMs ()I
@@ -41,10 +39,21 @@ CLASS a/a/a/h net/rudp/impl/Segment
 	FIELD c sequenceNumber I
 	FIELD d acknowledgmentNumber I
 	FIELD e channel I
+	METHOD a getSegmentName ()Ljava/lang/String;
+	METHOD a deserializeFrom ([BII)V
+		ARG 2 off
+		ARG 3 len
 	METHOD a setAcknowledgmentNumber (I)V
 	METHOD a setHeaderFields (III)V
+		ARG 1 flags
+		ARG 2 seq
+		ARG 3 len
+	METHOD b length ()I
 	METHOD b decodeHeader ([BII)La/a/a/h;
+		ARG 1 off
+		ARG 2 len
 	METHOD b setChannel (I)V
+	METHOD d encodePayload ()[B
 	METHOD m getSequenceNumber ()I
 	METHOD n getAcknowledgmentNumber ()I
 	METHOD o getChannel ()I
@@ -67,7 +76,7 @@ CLASS a/a/a/i com/corrodinggames/rts/gameFramework/utility/CustomTimerTask
 	METHOD d pause ()V
 	METHOD e cancel ()V
 	METHOD f stop ()V
-CLASS a/a/b com/corrodinggames/rts/gameFramework/net/ReliableServerSocket
+CLASS a/a/b net/rudp/ReliableServerSocket
 	FIELD a acceptancePolicy La/a/c;
 	FIELD b lastLogTimeMs J
 	FIELD c logCounter I
@@ -95,24 +104,16 @@ CLASS a/a/b com/corrodinggames/rts/gameFramework/net/ReliableServerSocket
 	METHOD e getAcceptedConnectionsQueue (La/a/b;)Ljava/util/ArrayList;
 CLASS a/a/c net/rudp/socket/AcceptFilter
 	METHOD a shouldAcceptPeer (Ljava/net/SocketAddress;)Z
-CLASS a/a/d com/corrodinggames/rts/gameFramework/net/ReliableServerSocketThread
+CLASS a/a/d net/rudp/ReliableServerSocketThread
 	FIELD a serverSocket La/a/b;
-CLASS a/a/e com/corrodinggames/rts/gameFramework/net/ReliableSocketConnection
+CLASS a/a/e net/rudp/ReliableSocketConnection
 	FIELD a isInitialized Z
 	FIELD b serverSocket La/a/b;
 	FIELD i incomingPacketQueue Ljava/util/ArrayList;
-	METHOD a dequeueIncomingPacket ()La/a/a/h;
 	METHOD a enqueueIncomingPacket (La/a/a/h;)V
-	METHOD a logPortPrefixed (Ljava/lang/String;)V
-	METHOD a initConnection (Ljava/net/DatagramSocket;La/a/r;)V
-	METHOD b clearIncomingPacketQueue ()V
 CLASS a/a/f net/rudp/socket/ReliableSocketStateListener
 	FIELD a serverSocket La/a/b;
-	METHOD b onConnectFailed (La/a/h;)V
-	METHOD c onClosed (La/a/h;)V
-	METHOD d onTimeout (La/a/h;)V
-	METHOD e onPacketReceived (La/a/h;)V
-CLASS a/a/g com/corrodinggames/rts/gameFramework/net/PendingConnection
+CLASS a/a/g net/rudp/PendingConnection
 	FIELD a createdAtMs J
 	FIELD b reliableSocketConnection La/a/e;
 CLASS a/a/h net/rudp/ReliableSocket
@@ -151,6 +152,7 @@ CLASS a/a/h net/rudp/ReliableSocket
 	FIELD x inputLock Ljava/lang/Object;
 	FIELD y connectionStats La/a/i;
 	FIELD z packetReaderThread Ljava/lang/Thread;
+	METHOD a receiveSegment ()La/a/a/h;
 	METHOD a sendDatagramBytes ([BII)V
 	METHOD a sendDataBytes ([BIIZ)V
 	METHOD a accessIncrementSequenceModulo255 (I)I
@@ -162,6 +164,8 @@ CLASS a/a/h net/rudp/ReliableSocket
 	METHOD a logSelectiveAcknowledgment (La/a/h;La/a/a/c;)V
 	METHOD a stopPacketTimers (La/a/h;La/a/a/h;)V
 	METHOD a sendPacket (La/a/s;)V
+	METHOD a init (Ljava/net/DatagramSocket;La/a/r;)V
+	METHOD b close ()V
 	METHOD b receiveDatagramBytes ([BII)I
 	METHOD b incrementSequenceModulo255 (I)I
 	METHOD b isValidAcknowledgment (La/a/a/h;)Z
@@ -200,7 +204,7 @@ CLASS a/a/h net/rudp/ReliableSocket
 	METHOD q sendCumulativeAckIfNeeded ()V
 	METHOD r processOutOfOrderPackets ()V
 	CLASS 1 ReliableSocket
-CLASS a/a/i com/corrodinggames/rts/gameFramework/net/ConnectionStats
+CLASS a/a/i net/rudp/ConnectionStats
 	FIELD a nextSequenceToSend I
 	FIELD b lastSequenceReceived I
 	FIELD c sentPacketCount I
@@ -220,32 +224,33 @@ CLASS a/a/i com/corrodinggames/rts/gameFramework/net/ConnectionStats
 	METHOD j getDroppedPacketCount ()I
 	METHOD k drainDroppedPacketCount ()I
 	METHOD l reset ()V
-CLASS a/a/j com/corrodinggames/rts/gameFramework/net/Connection
-CLASS a/a/k com/corrodinggames/rts/gameFramework/net/Connection
-CLASS a/a/l com/corrodinggames/rts/gameFramework/net/Connection
-CLASS a/a/m com/corrodinggames/rts/gameFramework/net/Connection
-CLASS a/a/n com/corrodinggames/rts/gameFramework/net/Connection
-CLASS a/a/o com/corrodinggames/rts/gameFramework/net/ConnectionInputStream
+CLASS a/a/j net/rudp/ReliableSocketKeepAliveTask
+CLASS a/a/k net/rudp/ReliableSocketRetransmitTask
+CLASS a/a/l net/rudp/ReliableSocketCloseIfIdleTask
+	FIELD a socket La/a/h;
+CLASS a/a/m net/rudp/ReliableSocketPacketHandlerThread
+CLASS a/a/n net/rudp/ReliableSocketRestartPacketTimerTask
+CLASS a/a/o net/rudp/ConnectionInputStream
 	FIELD a connection La/a/h;
 	FIELD b readBuffer [B
 	FIELD c readOffset I
 	FIELD d bufferedBytes I
 	METHOD a fillReceiveBuffer ()I
-CLASS a/a/p com/corrodinggames/rts/gameFramework/net/ConnectionListener
+CLASS a/a/p net/rudp/ConnectionListener
 	METHOD a onConnected ()V
 	METHOD b onClosed ()V
 	METHOD c onPacketReceived ()V
 	METHOD d onPacketSent ()V
-CLASS a/a/q com/corrodinggames/rts/gameFramework/net/ConnectionOutputStream
+CLASS a/a/q net/rudp/ConnectionOutputStream
 	FIELD a connection La/a/h;
 	FIELD b writeBuffer [B
 	FIELD c bufferedBytes I
-CLASS a/a/r com/corrodinggames/rts/gameFramework/net/ReliableSocketProfile
+CLASS a/a/r net/rudp/ReliableSocketProfile
 	FIELD a DEFAULT_PROFILE La/a/r;
 	FIELD b maxSendQueueSize I
 	FIELD c maxRecvQueueSize I
 	FIELD d maxSegmentSize I
-	FIELD e maxOutstandingSegments I
+	FIELD e gameVersion I
 	FIELD f maxRetransmissions I
 	FIELD g maxCumulativeAcks I
 	FIELD h maxOutOfOrder I
@@ -267,12 +272,18 @@ CLASS a/a/r com/corrodinggames/rts/gameFramework/net/ReliableSocketProfile
 CLASS a/a/s net/rudp/socket/ReliableSocketListener
 	METHOD a onConnected (La/a/h;)V
 	METHOD b onConnectFailed (La/a/h;)V
+	METHOD c onClosed (La/a/h;)V
+	METHOD d onConnectionLost (La/a/h;)V
+	METHOD e onRemoteReset (La/a/h;)V
 CLASS android/graphics/Point
 	FIELD a worldX I
 	FIELD b worldY I
-CLASS android/net/http/a android/net/http/AndroidHttpClient
+CLASS android/graphics/PointF
+	FIELD a x F
+	FIELD b y F
+CLASS android/net/http/a android/net/http/CurlLogger
 	FIELD a this$0 Landroid/net/http/AndroidHttpClient;
-CLASS android/net/http/b android/net/http/AndroidHttpClient
+CLASS android/net/http/b android/net/http/LoggingConfiguration
 	FIELD a tag Ljava/lang/String;
 	FIELD b level I
 	METHOD a isLoggable ()Z
@@ -529,9 +540,7 @@ CLASS com/corrodinggames/rts/appFramework/g com/corrodinggames/rts/appFramework/
 	FIELD d handler Landroid/os/Handler;
 	FIELD e progressDialog Landroid/app/ProgressDialog;
 	FIELD f running Z
-	METHOD a onCreateOptionsMenu (Landroid/view/Menu;)Z
 	METHOD a showChatDialog (Z)V
-	METHOD b finish ()V
 	METHOD c selectMenuOption (I)V
 	METHOD d onSelectMenuOption (I)V
 	METHOD e showSaveGameDialog (Ljava/lang/String;)V
@@ -724,8 +733,6 @@ CLASS com/corrodinggames/rts/game/a/a com/corrodinggames/rts/game/ai/AIControlle
 	FIELD bx baseDefenseUnitBuildStrategy Lcom/corrodinggames/rts/game/a/d;
 	FIELD by scoutUnitBuildStrategy Lcom/corrodinggames/rts/game/a/d;
 	FIELD bz fabricatorUnitBuildStrategy Lcom/corrodinggames/rts/game/a/d;
-	METHOD <clinit> initStaticFields ()V
-	METHOD a updateTeam (F)V
 	METHOD a getNearestTileToPosition (FF)Landroid/graphics/PointF;
 	METHOD a isPathPossibleBetweenPoints (FFFFLcom/corrodinggames/rts/game/units/ao;)Z
 	METHOD a canUnitReachNode (FFLcom/corrodinggames/rts/game/a/o;Lcom/corrodinggames/rts/game/units/ao;)Z
@@ -747,12 +754,10 @@ CLASS com/corrodinggames/rts/game/a/a com/corrodinggames/rts/game/ai/AIControlle
 	METHOD a applyAIBuilder (Lcom/corrodinggames/rts/game/units/as;ZLcom/corrodinggames/rts/game/a/b;)I
 	METHOD a isPathPossibleBetweenPoints (Lcom/corrodinggames/rts/game/units/custom/d/b;Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD a canUnitReachPoint (Lcom/corrodinggames/rts/game/units/custom/d/b;Lcom/corrodinggames/rts/game/units/am;Z)Z
-	METHOD a executeCustomUnitAction (Lcom/corrodinggames/rts/game/units/y;)V
 	METHOD a getNodeId (Lcom/corrodinggames/rts/game/units/y;Lcom/corrodinggames/rts/game/units/a/c;)V
 	METHOD a issueUnitAction (Lcom/corrodinggames/rts/game/units/y;Lcom/corrodinggames/rts/game/units/a/s;)Z
 	METHOD a pathCheck (Lcom/corrodinggames/rts/game/units/y;Lcom/corrodinggames/rts/game/units/a/s;Landroid/graphics/PointF;Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD a processAIVariable (Lcom/corrodinggames/rts/game/units/y;Lcom/corrodinggames/rts/game/units/custom/d/b;Z)V
-	METHOD a writeToOutputStream (Lcom/corrodinggames/rts/gameFramework/j/as;)V
 	METHOD ac isInsaneDifficulty ()Z
 	METHOD ad isHardOrAboveDifficulty ()Z
 	METHOD ae isAggressiveFlagEnabled ()Z
@@ -780,7 +785,6 @@ CLASS com/corrodinggames/rts/game/a/a com/corrodinggames/rts/game/ai/AIControlle
 	METHOD b canUnitEngageTarget (Lcom/corrodinggames/rts/game/units/am;Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD c findNearestZone (FF)Lcom/corrodinggames/rts/game/a/i;
 	METHOD c getAttackModeForUnit (Lcom/corrodinggames/rts/game/units/y;)Lcom/corrodinggames/rts/game/units/a;
-	METHOD d onUnitDestroyed (Lcom/corrodinggames/rts/game/units/am;)V
 	METHOD d onUnitPreUpdate (Lcom/corrodinggames/rts/game/units/y;)V
 	METHOD d setDebugKeyState (Ljava/lang/String;)V
 	METHOD e getAnySelectableUnitForTeam (Lcom/corrodinggames/rts/game/n;)Lcom/corrodinggames/rts/game/units/am;
@@ -799,7 +803,6 @@ CLASS com/corrodinggames/rts/game/a/a com/corrodinggames/rts/game/ai/AIControlle
 	METHOD m updateCoreLogic (F)V
 	METHOD m findNodeById (I)Lcom/corrodinggames/rts/game/a/o;
 	METHOD n updateAILogic (F)V
-	METHOD T updateTeamColor ()V
 CLASS com/corrodinggames/rts/game/a/a/a com/corrodinggames/rts/game/ai/behaviors/AIBehavior
 	METHOD a onUnitAdded (Lcom/corrodinggames/rts/game/a/a;Lcom/corrodinggames/rts/game/units/y;)V
 	METHOD b onUnitRemoved (Lcom/corrodinggames/rts/game/a/a;Lcom/corrodinggames/rts/game/units/y;)V
@@ -813,10 +816,6 @@ CLASS com/corrodinggames/rts/game/a/a/b com/corrodinggames/rts/game/ai/behaviors
 	CLASS 2 AnonymousClass2
 CLASS com/corrodinggames/rts/game/a/a/c com/corrodinggames/rts/game/ai/behaviors/UnitAIBehavior
 	FIELD a managedUnits Lcom/corrodinggames/rts/gameFramework/utility/u;
-	METHOD a onUnitAdded (Lcom/corrodinggames/rts/game/a/a;Lcom/corrodinggames/rts/game/units/y;)V
-	METHOD a writeToStream (Lcom/corrodinggames/rts/gameFramework/j/as;)V
-	METHOD a readFromStream (Lcom/corrodinggames/rts/gameFramework/j/k;)V
-	METHOD b onUnitRemoved (Lcom/corrodinggames/rts/game/a/a;Lcom/corrodinggames/rts/game/units/y;)V
 	METHOD c isApplicableToUnit (Lcom/corrodinggames/rts/game/a/a;Lcom/corrodinggames/rts/game/units/y;)Z
 CLASS com/corrodinggames/rts/game/a/a/d com/corrodinggames/rts/game/ai/behaviors/NukeBehavior
 CLASS com/corrodinggames/rts/game/a/b com/corrodinggames/rts/game/ai/UnitFilterMode
@@ -1205,7 +1204,6 @@ CLASS com/corrodinggames/rts/game/b/g com/corrodinggames/rts/game/map/MapTile
 	FIELD l blocksBuildingPlacement Z
 	FIELD m randomVariants [Lcom/corrodinggames/rts/game/b/g;
 	FIELD n sharedTempRect Landroid/graphics/Rect;
-	METHOD a cloneTile ()Lcom/corrodinggames/rts/game/b/g;
 	METHOD a createTile (Lcom/corrodinggames/rts/game/b/b;Lcom/corrodinggames/rts/game/b/e;Lcom/corrodinggames/rts/game/b/j;ISSZ)Lcom/corrodinggames/rts/game/b/g;
 	METHOD a compareTiles (Lcom/corrodinggames/rts/game/b/g;Lcom/corrodinggames/rts/game/b/g;)Z
 	METHOD a renderTile (Lcom/corrodinggames/rts/gameFramework/m/y;Landroid/graphics/RectF;FLandroid/graphics/Paint;)V
@@ -1297,7 +1295,6 @@ CLASS com/corrodinggames/rts/game/b/k com/corrodinggames/rts/game/map/TilesetIma
 	FIELD f embeddedBase64 Ljava/lang/String;
 	FIELD g originalImageName Ljava/lang/String;
 CLASS com/corrodinggames/rts/game/c com/corrodinggames/rts/game/AIPlayer
-	METHOD a updateTeam (F)V
 CLASS com/corrodinggames/rts/game/d com/corrodinggames/rts/game/SystemTeam
 CLASS com/corrodinggames/rts/game/e com/corrodinggames/rts/game/GameTeam
 CLASS com/corrodinggames/rts/game/f com/corrodinggames/rts/game/Projectile
@@ -1795,7 +1792,6 @@ CLASS com/corrodinggames/rts/game/units/am com/corrodinggames/rts/game/units/Bas
 	FIELD dp unitAnimationScale F
 	FIELD dq unitAnimationRotation F
 	FIELD dz unitType Lcom/corrodinggames/rts/game/units/as;
-	METHOD a remove ()V
 	METHOD a setPosition (Landroid/graphics/Paint;)V
 	METHOD a takeDamage (Landroid/graphics/Paint;Z)V
 	METHOD a heal (Landroid/graphics/RectF;)Z
@@ -1803,7 +1799,6 @@ CLASS com/corrodinggames/rts/game/units/am com/corrodinggames/rts/game/units/Bas
 	METHOD a performUnitAction (Lcom/corrodinggames/rts/game/units/a/s;Z)V
 	METHOD a setTarget (Lcom/corrodinggames/rts/game/units/am;FLcom/corrodinggames/rts/game/f;)F
 	METHOD a findTurretPosition (Lcom/corrodinggames/rts/game/units/as;)Lcom/corrodinggames/rts/game/units/am;
-	METHOD a searchForEnemyTargets (Lcom/corrodinggames/rts/gameFramework/l;)Z
 	METHOD a getUnitTextureSize (Lcom/corrodinggames/rts/gameFramework/m/e;)Lcom/corrodinggames/rts/gameFramework/m/e;
 	METHOD a attackUnit (Lcom/corrodinggames/rts/gameFramework/m/e;II)Lcom/corrodinggames/rts/gameFramework/m/e;
 	METHOD a clearAndAddAction (Ljava/util/ArrayList;)V
@@ -1821,7 +1816,7 @@ CLASS com/corrodinggames/rts/game/units/am com/corrodinggames/rts/game/units/Bas
 	METHOD bH loadAllUnits ()V
 	METHOD bl getTechLevel ()I
 	METHOD bL getAttachmentCount ()V
-	METHOD bN getHeavyTankMaxHealth ()F
+	METHOD bN getPushMass ()F
 	METHOD bT isAlive ()Z
 	METHOD bW getUnitTeamData ()F
 	METHOD bX isUnitAtPositionX ()Z
@@ -1889,10 +1884,8 @@ CLASS com/corrodinggames/rts/game/units/am com/corrodinggames/rts/game/units/Bas
 	METHOD dh getUnitAICombatTimer ()Lcom/corrodinggames/rts/game/units/custom/h;
 	METHOD di updateUnitCombatTimer ()V
 	METHOD dj getUnitAICombatStateTime ()V
-	METHOD e damageHeavyTank (F)V
 	METHOD e isSelectable (Lcom/corrodinggames/rts/game/n;)V
 	METHOD e getUnitAction (Lcom/corrodinggames/rts/game/units/as;)Lcom/corrodinggames/rts/game/units/a/s;
-	METHOD f isUnitInRange (F)Z
 	METHOD g getUnitHealthPercent ()F
 	METHOD J mo193J ()Z
 	METHOD l canAttack ()Z
@@ -1901,7 +1894,7 @@ CLASS com/corrodinggames/rts/game/units/am com/corrodinggames/rts/game/units/Bas
 	METHOD O setUnitLevel (I)V
 	METHOD P setUnitSelected (I)V
 	METHOD Q setTeam (I)V
-	METHOD s updateTexture (Lcom/corrodinggames/rts/game/units/am;)I
+	METHOD s getSoftCollisionDivisor (Lcom/corrodinggames/rts/game/units/am;)I
 	METHOD s_ isBuilding ()Z
 	METHOD t setWidth (Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD u setHeight (Lcom/corrodinggames/rts/game/units/am;)I
@@ -1919,13 +1912,10 @@ CLASS com/corrodinggames/rts/game/units/ap com/corrodinggames/rts/game/units/Uni
 	FIELD j targetUnit Lcom/corrodinggames/rts/game/units/am;
 CLASS com/corrodinggames/rts/game/units/aq com/corrodinggames/rts/game/units/PathfindingUtils
 	METHOD a findPathObstacle (Lcom/corrodinggames/rts/game/units/ao;IIIIIII)Landroid/graphics/Point;
-	METHOD b canReachTarget (Lcom/corrodinggames/rts/game/units/ao;FFFFIII)Z
+	METHOD b canReachTargetPrepared (Lcom/corrodinggames/rts/game/units/ao;FFFFIII)Z
 CLASS com/corrodinggames/rts/game/units/ar com/corrodinggames/rts/game/units/UnitTypeEnum
 	FIELD aa buildAction Lcom/corrodinggames/rts/game/units/a/z;
 	FIELD ab buildPriority I
-	METHOD a createUnitInstance ()Lcom/corrodinggames/rts/game/units/am;
-	METHOD a getUnitsByCount (I)Ljava/util/ArrayList;
-	METHOD a getUnitProperty (Lcom/corrodinggames/rts/game/units/am;)I
 	METHOD a canPlaceUnit (Lcom/corrodinggames/rts/game/units/as;FFFFLcom/corrodinggames/rts/game/n;)Z
 	METHOD a drawUnit (Lcom/corrodinggames/rts/game/units/as;FFFFLcom/corrodinggames/rts/game/n;FFZZILcom/corrodinggames/rts/game/units/am;)V
 	METHOD a drawUnitWithBoolean (Lcom/corrodinggames/rts/game/units/as;FFFFLcom/corrodinggames/rts/game/n;FFZZIZLcom/corrodinggames/rts/game/units/am;)V
@@ -1939,31 +1929,10 @@ CLASS com/corrodinggames/rts/game/units/ar com/corrodinggames/rts/game/units/Uni
 	METHOD a createUnitInstanceWithBoolean (Z)Lcom/corrodinggames/rts/game/units/am;
 	METHOD A createUnit ()Z
 	METHOD b abstractMethodB ()V
-	METHOD b getUnitPropertyWithInt (I)I
-	METHOD B loadResources ()Lcom/corrodinggames/rts/game/units/custom/d/b;
-	METHOD c canBeBuilt ()I
 	METHOD c getUpgradeCost (I)I
-	METHOD d getUnitTypeDescription ()Lcom/corrodinggames/rts/game/units/a/z;
-	METHOD d getUnitTypeDescription (I)Lcom/corrodinggames/rts/game/units/custom/d/b;
-	METHOD e getUnitName ()Ljava/lang/String;
-	METHOD g getBuildPoints ()I
-	METHOD h onUnitCreated ()V
-	METHOD j isBuilding ()Z
-	METHOD k isMobile ()Z
-	METHOD l isFlying ()Z
-	METHOD m hasTransport ()Z
-	METHOD n isUnselectable ()Z
-	METHOD o getUnitMovementType ()Lcom/corrodinggames/rts/game/units/ao;
-	METHOD p isLocked ()Z
-	METHOD q getCustomUnitMetadata ()Lcom/corrodinggames/rts/game/units/custom/be;
 	METHOD r loadAllUnitTypes ()V
 	METHOD s loadUnitTypeImages ()V
 	METHOD t loadUnitTypeSounds ()V
-	METHOD u getUnitTypeIcon ()Lcom/corrodinggames/rts/game/units/custom/d/b;
-	METHOD v getUnitTypeDescriptionString ()Ljava/lang/String;
-	METHOD w isGlobalUnit ()Z
-	METHOD x getUnitCustomData ()Lcom/corrodinggames/rts/game/units/custom/h;
-	METHOD z getUnitIconTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
 	CLASS 1 extractor
 	CLASS 2 HoverTankUnitType
 	CLASS 3 ArtilleryUnitType
@@ -2068,11 +2037,7 @@ CLASS com/corrodinggames/rts/game/units/av com/corrodinggames/rts/game/units/Uni
 CLASS com/corrodinggames/rts/game/units/b com/corrodinggames/rts/game/units/UnitBehaviorType
 CLASS com/corrodinggames/rts/game/units/b/a com/corrodinggames/rts/game/units/air/AirShip
 CLASS com/corrodinggames/rts/game/units/b/b com/corrodinggames/rts/game/units/air/AirUnit
-	METHOD a updateHeavyTankMovement (F)V
-	METHOD e destroyHeavyTank ()Z
-	METHOD h getAirUnitMovementType ()Lcom/corrodinggames/rts/game/units/ao;
 	METHOD K loadAirUnitTextures ()V
-	METHOD v getAirUnitIconTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
 CLASS com/corrodinggames/rts/game/units/b/c com/corrodinggames/rts/game/units/air/AmphibiousJet
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
@@ -2686,70 +2651,15 @@ CLASS com/corrodinggames/rts/game/units/custom/j com/corrodinggames/rts/game/uni
 	FIELD n isUnloading Z
 	FIELD x unitConfig Lcom/corrodinggames/rts/game/units/custom/l;
 	FIELD z customUnitCOnfig Lcom/corrodinggames/rts/game/units/custom/l;
-	METHOD a isValidAttackTarget (FZ)V
 	METHOD a canAttackTargetUnit (Lcom/corrodinggames/rts/game/units/am;ZZ)Z
-	METHOD A updateCustomUnit (I)F
-	METHOD a_ getHeavyTankBounds (Z)Landroid/graphics/Rect;
-	METHOD ac isUnitAttacking ()Z
-	METHOD ae isUnitDefensive ()Z
-	METHOD ag isUnitStealth ()Z
-	METHOD ah isUnitFlying ()Z
-	METHOD aj canUnitAttack ()Z
-	METHOD al isUnitRepairable ()Z
-	METHOD am getUnitElevation ()F
-	METHOD aM getUnitHitPoints ()F
-	METHOD an isUnitOnGround ()Z
-	METHOD aN getUnitPaint ()Landroid/graphics/Paint;
-	METHOD aP getUnitPosition ()Landroid/graphics/PointF;
-	METHOD aR isUnitSelected ()Z
-	METHOD aS isUnitVisible ()Z
-	METHOD aT mo191aT ()I
-	METHOD aU getUnitRotation ()F
-	METHOD aV isUnitAlive ()Z
-	METHOD b getTargetPriority ()[Landroid/graphics/PointF;
-	METHOD B getHeavyTankSoundPitch ()F
-	METHOD B drawCustomUnit (I)F
-	METHOD bA isTransportUnloading ()Z
-	METHOD bB getLoadedUnitCount ()I
-	METHOD bc getHeavyTankAnimationSpeed ()F
-	METHOD bd getUnitAnimationTime ()F
-	METHOD bD getUnitConfig ()Lcom/corrodinggames/rts/game/units/custom/d/b;
-	METHOD be getUnitBehaviorType ()Lcom/corrodinggames/rts/game/units/b;
-	METHOD bf isUnitBuilder ()Z
-	METHOD bg isUnitExtractor ()Z
-	METHOD bJ isUnitDisabled ()Z
-	METHOD bm isUnitUpgraded ()Z
-	METHOD bO isUnitStunned ()Z
-	METHOD bp getUnitUpgradeLevel ()I
-	METHOD bP isUnitSilenced ()Z
-	METHOD bq resetUnitState ()V
-	METHOD bu updateUnitEffects ()V
-	METHOD bU isUnitInvulnerable ()Z
-	METHOD bv updateUnitAnimation ()V
-	METHOD by getUnitDisplayConfig ()Lcom/corrodinggames/rts/game/units/custom/d/b;
-	METHOD c getUnitDistanceToTarget (Lcom/corrodinggames/rts/game/units/am;)F
-	METHOD C getUnitWidth (I)F
 	METHOD C loadTransportedUnit (Lcom/corrodinggames/rts/game/units/am;)V
-	METHOD c_ isUnitCloaked ()Z
-	METHOD d getUnitHeight (Lcom/corrodinggames/rts/game/units/am;Z)Z
-	METHOD D getAttackRange (I)Lcom/corrodinggames/rts/gameFramework/utility/ai;
 	METHOD D unloadTransportedUnit (Lcom/corrodinggames/rts/game/units/am;)V
-	METHOD E spawnUnitFromTransport ()Z
 	METHOD E getAttackDamage (Lcom/corrodinggames/rts/game/units/am;)V
-	METHOD e_ isUnitHidden ()[Landroid/graphics/PointF;
-	METHOD F updateTransportAnimation (I)Lcom/corrodinggames/rts/gameFramework/utility/ai;
-	METHOD G canTransportUnitType (I)Landroid/graphics/PointF;
 	METHOD G getUnitArmor (Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD H getTransportedUnitCount (Lcom/corrodinggames/rts/game/units/am;)Z
-	METHOD I isTransportFull ()Z
-	METHOD J getHeavyTankTransportSlots (I)F
 	METHOD K getMaxTransportedUnits ()V
 	METHOD L getTransportedUnits ()V
-	METHOD L getUnitMass (I)F
 	METHOD M getLoadedUnits ()V
-	METHOD T getTransportUnloadPosition ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD U getTransportLoadPosition ()V
-	METHOD V getUnitMovementType ()I
 CLASS com/corrodinggames/rts/game/units/custom/k com/corrodinggames/rts/game/units/custom/CustomUnitEventData
 	FIELD a eventInfo Lcom/corrodinggames/rts/game/units/custom/ae;
 	FIELD b customUnit Lcom/corrodinggames/rts/game/units/custom/j;
@@ -3159,12 +3069,9 @@ CLASS com/corrodinggames/rts/game/units/custom/l com/corrodinggames/rts/game/uni
 	METHOD b getConfigDisplayPath (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/x;
 	METHOD c createSpawnList (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/z;
 	METHOD c addActionHandler (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/u;
-	METHOD C isBuildableInFactory ()Z
 	METHOD d resolveEffect (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/ay;
-	METHOD D getBuildTime ()F
 	METHOD e findProjectileConfigByName (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/bn;
 	METHOD E getAllUnitAndTriggerNames ()Ljava/lang/String;
-	METHOD f getLocalizedDescription ()Ljava/lang/String;
 	METHOD f findProjectileTemplateByName (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/bh;
 	METHOD F spawnOnNewMapAccordingToTeamColors ()V
 	METHOD g findCustomActionDefByDisplayName (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/custom/a/d;
@@ -3183,7 +3090,6 @@ CLASS com/corrodinggames/rts/game/units/custom/l com/corrodinggames/rts/game/uni
 	METHOD s getAllCustomUnitTypeIds ()Ljava/util/ArrayList;
 	METHOD s getUnitTypeByName (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/as;
 	METHOD t getOwningModDisplayTitle ()Ljava/lang/String;
-	METHOD y hasCreditResourceCost ()Z
 CLASS com/corrodinggames/rts/game/units/custom/logicBooleans/LogicBoolean
 	FIELD activeEvent currentEventContext Lcom/corrodinggames/rts/game/units/custom/k;
 	FIELD booleans booleanRegistry Ljava/util/HashMap;
@@ -3251,15 +3157,8 @@ CLASS com/corrodinggames/rts/game/units/d/a com/corrodinggames/rts/game/units/bu
 	FIELD f factoryLevel I
 	FIELD g animationTiming F
 	FIELD h upgradeActionId Lcom/corrodinggames/rts/game/units/a/c;
-	METHOD a setFactoryLevel (I)V
 	METHOD a addAvailableActions (Ljava/util/ArrayList;I)V
 	METHOD b loadTextures ()V
-	METHOD bJ isUnitDisabled ()Z
-	METHOD cm getUpgradeAction ()Lcom/corrodinggames/rts/game/units/a/c;
-	METHOD d getHeavyTankTransportTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD k getHeavyTankShadowTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD K getUnitType ()Lcom/corrodinggames/rts/game/units/ar;
-	METHOD N getAvailableActions ()Ljava/util/ArrayList;
 CLASS com/corrodinggames/rts/game/units/d/a/a com/corrodinggames/rts/game/units/buildings/turrets/AntiAirTurret
 	FIELD a level1Texture Lcom/corrodinggames/rts/gameFramework/m/e;
 	FIELD b level2Texture Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3267,26 +3166,7 @@ CLASS com/corrodinggames/rts/game/units/d/a/a com/corrodinggames/rts/game/units/
 	FIELD d teamIconTextures [Lcom/corrodinggames/rts/gameFramework/m/e;
 	FIELD e upgradeToLevel2Action Lcom/corrodinggames/rts/game/units/a/s;
 	FIELD f availableActions Ljava/util/ArrayList;
-	METHOD a fireProjectile (Lcom/corrodinggames/rts/game/units/am;I)V
-	METHOD a onUpgrade (Lcom/corrodinggames/rts/game/units/d/j;)V
-	METHOD a clearAndAddAction (Ljava/util/ArrayList;)V
-	METHOD af isHeavyTankAggressive ()Z
-	METHOD ag isUnitStealth ()Z
 	METHOD b loadTextures ()V
-	METHOD b getHeavyTankAttackDamage (I)F
-	METHOD B getHeavyTankSoundPitch ()F
-	METHOD bl getTechLevel ()I
-	METHOD c getHeavyTankAttackRange (I)F
-	METHOD d getHeavyTankTurretTexture (I)Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD e getMuzzlePoint (I)F
-	METHOD E mo192E (I)Landroid/graphics/PointF;
-	METHOD g getHeavyTankAttackCooldown (I)F
-	METHOD m getHeavyTankMovementSpeed ()F
-	METHOD r canAttackWeapon (I)Z
-	METHOD s updateTurretRotation (F)V
-	METHOD u canAttack (I)Z
-	METHOD v getAirUnitIconTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD v getTurretIndex (I)I
 	CLASS 1 AnonymousClass1
 CLASS com/corrodinggames/rts/game/units/d/a/b com/corrodinggames/rts/game/units/buildings/turrets/TurretFactory
 	FIELD a turretTopL1Texture Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3320,25 +3200,13 @@ CLASS com/corrodinggames/rts/game/units/d/a/b com/corrodinggames/rts/game/units/
 	FIELD v GUN_TURRET_T3_TYPE Ljava/lang/String;
 	FIELD w ARTILLERY_TURRET_TYPE Ljava/lang/String;
 	FIELD x FLAMETHROWER_TURRET_TYPE Ljava/lang/String;
-	METHOD a updateHeavyTankMovement (F)V
 	METHOD a getActions (Lcom/corrodinggames/rts/game/units/d/a/b;I)Landroid/graphics/PointF;
-	METHOD a_ setTurretType (Ljava/lang/String;)V
-	METHOD b isTurret (IF)Z
 	METHOD b setTurretTypeInternal (Ljava/lang/String;)V
-	METHOD bV getAcceleration ()F
 	METHOD c createTurretImplementation (Ljava/lang/String;)Lcom/corrodinggames/rts/game/units/d/a/c;
-	METHOD cL getAttackingState ()I
-	METHOD d getHeavyTankTransportTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD d getHeavyTankTurretTexture (I)Lcom/corrodinggames/rts/gameFramework/m/e;
 	METHOD dB loadTextures ()V
 	METHOD dC drawTurret ()V
-	METHOD H getTurretHeight (I)F
-	METHOD L onDeath ()Z
 	METHOD M getTurretTechLevel ()I
-	METHOD M setAttackSpeed (I)V
-	METHOD q getHeavyTankProjectileSpeed (I)F
 	METHOD s updateTurretRotation (F)V
-	METHOD w getTurretTurnSpeed (I)F
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
 	CLASS 3 AnonymousClass3
@@ -3360,7 +3228,6 @@ CLASS com/corrodinggames/rts/game/units/d/a/c com/corrodinggames/rts/game/units/
 	METHOD h getTurretOffset (I)F
 CLASS com/corrodinggames/rts/game/units/d/a/d com/corrodinggames/rts/game/units/buildings/turrets/ArtilleryTurret
 	FIELD b turretFactory Lcom/corrodinggames/rts/game/units/d/a/b;
-	METHOD c getTurretType ()Ljava/lang/String;
 CLASS com/corrodinggames/rts/game/units/d/a/e com/corrodinggames/rts/game/units/buildings/turrets/FlamethrowerTurret
 	FIELD b turretFactory Lcom/corrodinggames/rts/game/units/d/a/b;
 CLASS com/corrodinggames/rts/game/units/d/a/f com/corrodinggames/rts/game/units/buildings/turrets/GunTurretT2
@@ -3369,7 +3236,6 @@ CLASS com/corrodinggames/rts/game/units/d/a/g com/corrodinggames/rts/game/units/
 	FIELD b turretFactory Lcom/corrodinggames/rts/game/units/d/a/b;
 CLASS com/corrodinggames/rts/game/units/d/a/h com/corrodinggames/rts/game/units/buildings/turrets/GunTurret
 	FIELD b turretFactory Lcom/corrodinggames/rts/game/units/d/a/b;
-	METHOD d getBuildCost ()I
 CLASS com/corrodinggames/rts/game/units/d/b com/corrodinggames/rts/game/units/buildings/AirFactoryUpgradeT2
 CLASS com/corrodinggames/rts/game/units/d/c com/corrodinggames/rts/game/units/buildings/AntiNukeLauncher
 	FIELD a teamTextures [Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3387,10 +3253,7 @@ CLASS com/corrodinggames/rts/game/units/d/c com/corrodinggames/rts/game/units/bu
 	METHOD a isProjectileAlreadyTargeted (Lcom/corrodinggames/rts/game/f;)Z
 	METHOD b initializeTextures ()V
 	METHOD b launchAntiNuke (Lcom/corrodinggames/rts/game/f;)V
-	METHOD cb scanForNukes ()V
-	METHOD cm getUpgradeAction ()Lcom/corrodinggames/rts/game/units/a/c;
 	METHOD M addAntiNuke ()V
-	METHOD O onQueueComplete ()V
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
 CLASS com/corrodinggames/rts/game/units/d/d com/corrodinggames/rts/game/units/buildings/BaseBuilding
@@ -3402,19 +3265,9 @@ CLASS com/corrodinggames/rts/game/units/d/d com/corrodinggames/rts/game/units/bu
 	FIELD r buildingAnimationState I
 	FIELD s currentAnimationFrame I
 	METHOD a canBuildingBePlacedAt (Lcom/corrodinggames/rts/game/units/as;FFLcom/corrodinggames/rts/game/n;)Z
-	METHOD b_ isBuildingConstructionComplete ()Z
-	METHOD bI isBuildingLocked ()Z
-	METHOD cc getBuildingTargetRect ()Landroid/graphics/Rect;
-	METHOD cd getBuildingVelocityRect ()Landroid/graphics/Rect;
 	METHOD ds isBuildingActive ()Z
-	METHOD e destroyHeavyTank ()Z
 	METHOD f getBuildingPaint ()Landroid/graphics/Paint;
-	METHOD f_ updateBuildingLogic ()V
-	METHOD h getAirUnitMovementType ()Lcom/corrodinggames/rts/game/units/ao;
-	METHOD i isBuildingSelectable ()Z
-	METHOD I isTransportFull ()Z
 	METHOD L onDeath ()Z
-	METHOD Q hasBuildingAttackRange ()Z
 	METHOD R setBuildingAnimationState (I)V
 CLASS com/corrodinggames/rts/game/units/d/e com/corrodinggames/rts/game/units/buildings/CommandCenter
 	FIELD a baseTexture Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3429,13 +3282,8 @@ CLASS com/corrodinggames/rts/game/units/d/e com/corrodinggames/rts/game/units/bu
 	FIELD j animationTimer4 F
 	FIELD k frameTimer F
 	FIELD l frameIndex I
-	METHOD a updateHeavyTankMovement (F)V
 	METHOD a addAvailableActions (Ljava/util/ArrayList;I)V
 	METHOD b loadTextures ()V
-	METHOD cy getResourceGenerationRate ()F
-	METHOD K getUnitType ()Lcom/corrodinggames/rts/game/units/ar;
-	METHOD l canAttack ()Z
-	METHOD S updateTextures ()V
 CLASS com/corrodinggames/rts/game/units/d/f com/corrodinggames/rts/game/units/buildings/ExperimentalLandFactory
 	FIELD a baseTexture Lcom/corrodinggames/rts/gameFramework/m/e;
 	FIELD b backgroundTexture Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3460,8 +3308,6 @@ CLASS com/corrodinggames/rts/game/units/d/g com/corrodinggames/rts/game/units/bu
 	FIELD v level1Actions Ljava/util/ArrayList;
 	FIELD w level2Actions Ljava/util/ArrayList;
 	FIELD x level3Actions Ljava/util/ArrayList;
-	METHOD c canBePlacedAt (Lcom/corrodinggames/rts/game/n;)Z
-	METHOD cy getResourceGenerationRate ()F
 	METHOD K loadTextures ()V
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
@@ -3479,7 +3325,6 @@ CLASS com/corrodinggames/rts/game/units/d/h com/corrodinggames/rts/game/units/bu
 	FIELD k upgradeToLevel2Action Lcom/corrodinggames/rts/game/units/a/s;
 	FIELD l upgradeToLevel3Action Lcom/corrodinggames/rts/game/units/a/s;
 	FIELD t availableActions Ljava/util/ArrayList;
-	METHOD cm getUpgradeAction ()Lcom/corrodinggames/rts/game/units/a/c;
 	METHOD K loadTextures ()V
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
@@ -3499,8 +3344,6 @@ CLASS com/corrodinggames/rts/game/units/d/m com/corrodinggames/rts/game/units/bu
 	FIELD h upgradeActionId Lcom/corrodinggames/rts/game/units/a/c;
 	METHOD a addAvailableActions (Ljava/util/ArrayList;I)V
 	METHOD b loadTextures ()V
-	METHOD cm getUpgradeAction ()Lcom/corrodinggames/rts/game/units/a/c;
-	METHOD V getUnitMovementType ()I
 CLASS com/corrodinggames/rts/game/units/d/n com/corrodinggames/rts/game/units/buildings/LandFactoryUpgradeAction
 CLASS com/corrodinggames/rts/game/units/d/o com/corrodinggames/rts/game/units/buildings/LandFactoryQueueManager
 CLASS com/corrodinggames/rts/game/units/d/p com/corrodinggames/rts/game/units/buildings/LaserDefense
@@ -3518,7 +3361,6 @@ CLASS com/corrodinggames/rts/game/units/d/p com/corrodinggames/rts/game/units/bu
 	FIELD l availableActions Ljava/util/ArrayList;
 	METHOD a attackTarget (Lcom/corrodinggames/rts/game/units/y;FFFFF)Z
 	METHOD b initializeTextures ()V
-	METHOD c drawUnit (F)Z
 	CLASS 1 AnonymousClass1
 CLASS com/corrodinggames/rts/game/units/d/q com/corrodinggames/rts/game/units/buildings/NukeLauncher
 	FIELD a teamTextures [Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3531,7 +3373,6 @@ CLASS com/corrodinggames/rts/game/units/d/q com/corrodinggames/rts/game/units/bu
 	FIELD h launchNukeAction Lcom/corrodinggames/rts/game/units/a/s;
 	FIELD i buildNukeAction Lcom/corrodinggames/rts/game/units/a/s;
 	FIELD j availableActions Ljava/util/ArrayList;
-	METHOD l canAttack ()Z
 	METHOD M initializeTextures ()V
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
@@ -3545,12 +3386,7 @@ CLASS com/corrodinggames/rts/game/units/d/r com/corrodinggames/rts/game/units/bu
 	FIELD h availableActions Ljava/util/ArrayList;
 	FIELD i targetPriorityPoints [Landroid/graphics/PointF;
 	FIELD j hiddenPoints [Landroid/graphics/PointF;
-	METHOD a updateHeavyTankMovement (F)V
-	METHOD c drawUnit (F)Z
-	METHOD E mo192E (I)Landroid/graphics/PointF;
-	METHOD g canRepairUnit (Lcom/corrodinggames/rts/game/units/am;Z)Z
 	METHOD M initializeTextures ()V
-	METHOD y getRepairRange ()I
 CLASS com/corrodinggames/rts/game/units/d/s com/corrodinggames/rts/game/units/buildings/AutoRepairCallback
 	FIELD a searchRangeSquared F
 	FIELD b isEnabled Z
@@ -3571,10 +3407,7 @@ CLASS com/corrodinggames/rts/game/units/d/t com/corrodinggames/rts/game/units/bu
 	FIELD g upgradeActionId Lcom/corrodinggames/rts/game/units/a/c;
 	METHOD a addAvailableActions (Ljava/util/ArrayList;I)V
 	METHOD b loadTextures ()V
-	METHOD dv getWaterDepth ()I
 CLASS com/corrodinggames/rts/game/units/d/u com/corrodinggames/rts/game/units/buildings/SeaFactoryT2Upgrade
-	METHOD b canUpgrade (Lcom/corrodinggames/rts/game/units/am;)Z
-	METHOD K getUpgradeProgress ()F
 CLASS com/corrodinggames/rts/game/units/d/v com/corrodinggames/rts/game/units/buildings/SupplyDepot
 	FIELD a baseTexture Lcom/corrodinggames/rts/gameFramework/m/e;
 	FIELD b tier2Texture Lcom/corrodinggames/rts/gameFramework/m/e;
@@ -3611,10 +3444,8 @@ CLASS com/corrodinggames/rts/game/units/e/b com/corrodinggames/rts/game/units/la
 	FIELD m chargePaint Landroid/graphics/Paint;
 	FIELD n reclaimAction Lcom/corrodinggames/rts/game/units/a/s;
 	METHOD a updateTargetPriorityPoints (FLcom/corrodinggames/rts/game/units/d;)V
-	METHOD a isBuildingBlocked (Lcom/corrodinggames/rts/game/units/am;)Z
 	METHOD a addAvailableActions (Ljava/util/ArrayList;I)V
 	METHOD b drawTargetPriorityPoints (FLcom/corrodinggames/rts/game/units/d;)V
-	METHOD f getUnitType ()Lcom/corrodinggames/rts/game/units/ar;
 	METHOD K loadTextures ()V
 CLASS com/corrodinggames/rts/game/units/e/c com/corrodinggames/rts/game/units/land/ExperimentalHoverTank
 CLASS com/corrodinggames/rts/game/units/e/d com/corrodinggames/rts/game/units/land/ExperimentalTank
@@ -3624,30 +3455,8 @@ CLASS com/corrodinggames/rts/game/units/e/f com/corrodinggames/rts/game/units/la
 	FIELD f turretAnimationTimer F
 	FIELD g smokeTimer F
 	FIELD h turretBounds Landroid/graphics/Rect;
-	METHOD a updateHeavyTankMovement (F)V
-	METHOD a_ getHeavyTankBounds (Z)Landroid/graphics/Rect;
-	METHOD af isHeavyTankAggressive ()Z
-	METHOD b getHeavyTankAttackDamage (I)F
-	METHOD B getHeavyTankSoundPitch ()F
-	METHOD bc getHeavyTankAnimationSpeed ()F
-	METHOD bN getHeavyTankMaxHealth ()F
-	METHOD c getHeavyTankAttackRange (I)F
-	METHOD d getHeavyTankTransportTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD d getHeavyTankTurretTexture (I)Lcom/corrodinggames/rts/gameFramework/m/e;
-	METHOD D mo154D ()F
-	METHOD e destroyHeavyTank ()Z
-	METHOD e damageHeavyTank (F)V
 	METHOD f loadHeavyTankTextures ()V
-	METHOD F shouldHeavyTankRenderShadow ()Z
-	METHOD g getHeavyTankAttackCooldown (I)F
-	METHOD G getHeavyTankHealthBarSize ()F
-	METHOD H getHeavyTankTurretSize ()F
-	METHOD I getHeavyTankTurretOffsetY (I)F
-	METHOD J getHeavyTankTransportSlots (I)F
-	METHOD k getHeavyTankShadowTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
 	METHOD K spawnHeavyTankSmoke ()V
-	METHOD m getHeavyTankMovementSpeed ()F
-	METHOD q getHeavyTankProjectileSpeed (I)F
 CLASS com/corrodinggames/rts/game/units/e/g com/corrodinggames/rts/game/units/land/HoverTankUnit
 CLASS com/corrodinggames/rts/game/units/e/h com/corrodinggames/rts/game/units/land/HoverLandUnit
 CLASS com/corrodinggames/rts/game/units/e/i com/corrodinggames/rts/game/units/land/HovercraftUnit
@@ -3655,13 +3464,7 @@ CLASS com/corrodinggames/rts/game/units/e/i com/corrodinggames/rts/game/units/la
 	FIELD f unloadTimer F
 	FIELD g isUnloading Z
 	FIELD h transportedUnits Lcom/corrodinggames/rts/gameFramework/utility/m;
-	METHOD bY getTransportedUnitsWeight ()I
-	METHOD bz getTransportedUnitsList ()Lcom/corrodinggames/rts/gameFramework/utility/m;
-	METHOD bZ getMaxTransportWeight ()I
-	METHOD d getHeavyTankTransportTexture ()Lcom/corrodinggames/rts/gameFramework/m/e;
 	METHOD ds stopUnloading ()V
-	METHOD e destroyHeavyTank ()Z
-	METHOD e tryTransportUnit (Lcom/corrodinggames/rts/game/units/am;Z)Z
 	METHOD f releaseAllUnits (Z)V
 	METHOD M startUnloading ()V
 	CLASS 1 AnonymousClass1
@@ -3772,24 +3575,25 @@ CLASS com/corrodinggames/rts/game/units/t com/corrodinggames/rts/game/units/Dumm
 CLASS com/corrodinggames/rts/game/units/u com/corrodinggames/rts/game/units/FogRevealer
 	FIELD a sightRange I
 	FIELD b lifeTimer F
-	METHOD s getSightRange ()I
-	METHOD t isRevealer ()Z
-	METHOD u isStealth ()Z
 CLASS com/corrodinggames/rts/game/units/v com/corrodinggames/rts/game/units/NaturalUnit
 CLASS com/corrodinggames/rts/game/units/w com/corrodinggames/rts/game/units/MovableUnit
 CLASS com/corrodinggames/rts/game/units/x com/corrodinggames/rts/game/units/DummyUnit
 CLASS com/corrodinggames/rts/game/units/y com/corrodinggames/rts/game/units/UnitEntity
+	FIELD a blockedRecoveryMisses I
+	FIELD A cachedSelectedPaintColor I
 	FIELD ad transportedBy Lcom/corrodinggames/rts/game/units/y;
 	FIELD aE defaultTeamPaint Lcom/corrodinggames/rts/gameFramework/m/ag;
 	FIELD aF selectedTeamPaint Lcom/corrodinggames/rts/gameFramework/m/ag;
+	FIELD aI nearbyCollisionSize B
 	FIELD aJ nearbyUnits [Lcom/corrodinggames/rts/game/units/am;
 	FIELD aK nearbyUnitDistances [F
-	FIELD aL nearbyUnitCount I
+	FIELD aL nextCollisionQueryTick I
 	FIELD av pathPositions [Lcom/corrodinggames/rts/game/units/af;
 	FIELD aw activePathCount I
 	FIELD aX overlayFilterLightGreen Landroid/graphics/PorterDuffColorFilter;
 	FIELD aY overlayFilterGreen Landroid/graphics/PorterDuffColorFilter;
 	FIELD aZ overlayFilterRed Landroid/graphics/PorterDuffColorFilter;
+	FIELD b blockedRecoveryTime F
 	FIELD B paralyzedOverlayPaint Landroid/graphics/Paint;
 	FIELD ba overlayFilterBlue Landroid/graphics/PorterDuffColorFilter;
 	FIELD bb overlayPaint1 Landroid/graphics/Paint;
@@ -3801,17 +3605,28 @@ CLASS com/corrodinggames/rts/game/units/y com/corrodinggames/rts/game/units/Unit
 	FIELD bj tempPointF4 Landroid/graphics/PointF;
 	FIELD bk tempPoint1 Landroid/graphics/Point;
 	FIELD bl tempPoint2 Landroid/graphics/Point;
+	FIELD c moveThrottle F
+	FIELD d transportRecoveryTime F
 	FIELD D baseTeamTint Lcom/corrodinggames/rts/gameFramework/m/ag;
+	FIELD e transportRecoveryDelay F
 	FIELD E selectedTeamTint Lcom/corrodinggames/rts/gameFramework/m/ag;
 	FIELD f waypointCount I
 	FIELD g waypoints [Lcom/corrodinggames/rts/game/units/au;
 	FIELD h isMoving Z
+	FIELD i lastReclaimSearchTick I
 	FIELD j canAttack Z
 	FIELD k isPathingActive Z
+	FIELD l pathTargetX F
+	FIELD m pathTargetY F
 	FIELD M baseTexture Lcom/corrodinggames/rts/gameFramework/m/e;
+	FIELD n pathTargetRadius I
 	FIELD N shadowTexture Lcom/corrodinggames/rts/gameFramework/m/e;
+	FIELD o lastPathTargetX F
+	FIELD p lastPathTargetY F
 	FIELD P attackMode Lcom/corrodinggames/rts/game/units/a;
+	FIELD q pathRetryCount B
 	FIELD Q attackCooldown I
+	FIELD r repathDistanceThreshold I
 	FIELD R attackTarget Lcom/corrodinggames/rts/game/units/am;
 	FIELD S turretRotation F
 	FIELD t isDead Z
@@ -3820,29 +3635,68 @@ CLASS com/corrodinggames/rts/game/units/y com/corrodinggames/rts/game/units/Unit
 	FIELD U turretTurnSpeed F
 	FIELD V wayPointTimer F
 	FIELD W radius F
+	FIELD x cachedBasePaint Lcom/corrodinggames/rts/gameFramework/m/ag;
 	FIELD X health F
+	FIELD y cachedBasePaintColor I
 	FIELD Y residentTimer F
+	FIELD z cachedSelectedPaint Lcom/corrodinggames/rts/gameFramework/m/ag;
 	FIELD Z lastDamagedBy Lcom/corrodinggames/rts/game/units/am;
 	METHOD a navigateToPosition (FFF)V
 	METHOD a rotateToward (FFZZ)F
 	METHOD a applyMovementToward (FLcom/corrodinggames/rts/game/units/ad;Lcom/corrodinggames/rts/game/units/au;Z)V
+	METHOD a updateTransportMovementState (FLcom/corrodinggames/rts/game/units/af;Lcom/corrodinggames/rts/game/units/ad;Lcom/corrodinggames/rts/game/units/au;)V
+	METHOD a advanceMovementLevelTowardTarget (FLcom/corrodinggames/rts/game/units/am;I)Z
+	METHOD a updateAttackTargetState (FLcom/corrodinggames/rts/game/units/am;Lcom/corrodinggames/rts/game/units/ad;Z)V
+	METHOD a updateMoveCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
 	METHOD a applyPositionChange (FLcom/corrodinggames/rts/gameFramework/l;FF)V
+	METHOD a resolveSoftCollisionWithUnit (Lcom/corrodinggames/rts/game/units/am;FZ)V
+	METHOD a setTransportParent (Lcom/corrodinggames/rts/game/units/y;)V
 	METHOD a copyWaypoints (Lcom/corrodinggames/rts/game/units/y;Lcom/corrodinggames/rts/game/units/y;)V
-	METHOD a readFromStream (Lcom/corrodinggames/rts/gameFramework/j/k;)V
+	METHOD a syncAttackTargetToMovementLevels (Lcom/corrodinggames/rts/gameFramework/l;F)V
+	METHOD a queryNearbyCollisionUnits (Lcom/corrodinggames/rts/gameFramework/l;FF)V
+	METHOD a updateMovementStateFromCommand (Lcom/corrodinggames/rts/gameFramework/l;FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
 	METHOD A getMaxTurnSpeed ()F
+	METHOD aB clearTransportState ()V
+	METHOD aD detachTransportedUnits ()V
+	METHOD aH clearPathData ()V
+	METHOD aI clearPathingState ()V
+	METHOD aJ advancePathPosition ()V
+	METHOD aK isCurrentTileBlocked ()Z
+	METHOD aL getPathChecksum ()J
+	METHOD aM getPathStepScale ()F
+	METHOD aN getRenderPaint ()Landroid/graphics/Paint;
+	METHOD ao queueNextWaypoint ()Lcom/corrodinggames/rts/game/units/au;
+	METHOD aO isRenderAntiAliasEnabled ()Z
+	METHOD ap appendWaypoint ()Lcom/corrodinggames/rts/game/units/au;
+	METHOD aP getShadowOffset ()Landroid/graphics/PointF;
+	METHOD aQ drawShadow ()Z
+	METHOD aw isAttackCommandActive ()Z
+	METHOD aW clampMovementLevelRotations ()V
+	METHOD aX collectMovementLevelStatistics ()Ljava/util/ArrayList;
 	METHOD aZ getMoveYAxisScaling ()F
 	METHOD b setBuiltPercentage (F)V
+	METHOD b updateAttackMoveCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD b updateAttackTargeting (Lcom/corrodinggames/rts/gameFramework/l;F)V
 	METHOD ba getMoveYAxisScalingInverse ()F
 	METHOD bi isSlidingMovement ()Z
 	METHOD bj isIgnoreMoveOrders ()Z
 	METHOD c faceTowardPosition (FF)F
+	METHOD c updateGuardOrFollowCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
 	METHOD C getMoveAccelerationSpeed ()F
-	METHOD h updateRotation (F)V
+	METHOD d updateTouchTargetCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD e updateLoadUpCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD f updateBuildCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD F canDrawShadow ()Z
+	METHOD g updateAllUnitCollisions (F)V
+	METHOD g updateAttackCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD G getShadowOffsetX ()F
+	METHOD h updateLoadIntoCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
+	METHOD H getShadowOffsetY ()F
 	METHOD i addRotation (F)V
+	METHOD i updateRepairOrReclaimCommand (FLcom/corrodinggames/rts/game/units/au;Lcom/corrodinggames/rts/game/units/ad;)V
 	METHOD k updateMovementLogic (F)V
 	METHOD K getShadowTexture (I)Landroid/graphics/PointF;
 	METHOD R getSelectionPaint ()Landroid/graphics/Paint;
-	METHOD s_ isBuilding ()Z
 	METHOD z getMoveSpeed ()F
 CLASS com/corrodinggames/rts/game/units/z com/corrodinggames/rts/game/units/TriggerDebugAction
 	FIELD a sourceUnit Lcom/corrodinggames/rts/game/units/am;
@@ -3858,16 +3712,10 @@ CLASS com/corrodinggames/rts/gameFramework/a/a com/corrodinggames/rts/gameFramew
 	FIELD e SOUND_THREAD_SLEEP_MS I
 	FIELD f context Landroid/content/Context;
 	FIELD g soundPool Landroid/media/SoundPool;
-	METHOD a startThread ()V
-	METHOD a createSound (I)Lcom/corrodinggames/rts/gameFramework/a/i;
-	METHOD a setContext (Landroid/content/Context;)V
-	METHOD a loadSound (Ljava/lang/String;Lcom/corrodinggames/rts/gameFramework/utility/j;Z)Lcom/corrodinggames/rts/gameFramework/a/i;
 CLASS com/corrodinggames/rts/gameFramework/a/b com/corrodinggames/rts/gameFramework/sound/AndroidSound
 	FIELD a soundFactory Lcom/corrodinggames/rts/gameFramework/a/a;
 	FIELD b soundId I
 	FIELD c parentFactory Lcom/corrodinggames/rts/gameFramework/a/a;
-	METHOD a getSoundId ()I
-	METHOD a play (FFIIF)V
 	METHOD b playDirect (FFIIF)V
 CLASS com/corrodinggames/rts/gameFramework/a/c com/corrodinggames/rts/gameFramework/sound/SoundRequest
 	FIELD a sound Lcom/corrodinggames/rts/gameFramework/a/b;
@@ -4014,9 +3862,6 @@ CLASS com/corrodinggames/rts/gameFramework/an com/corrodinggames/rts/gameFramewo
 	FIELD b availablePlayers Ljava/util/ArrayList;
 	FIELD c playingPlayers Ljava/util/ArrayList;
 	FIELD d loaded Z
-	METHOD a createMusicTrack ()Lcom/corrodinggames/rts/gameFramework/as;
-	METHOD a init (Lcom/corrodinggames/rts/gameFramework/am;)V
-	METHOD a createMusic (Ljava/lang/String;)Lcom/corrodinggames/rts/gameFramework/ar;
 CLASS com/corrodinggames/rts/gameFramework/ao com/corrodinggames/rts/gameFramework/AndroidMusic
 CLASS com/corrodinggames/rts/gameFramework/ap com/corrodinggames/rts/gameFramework/AndroidMusicTrack
 CLASS com/corrodinggames/rts/gameFramework/aq com/corrodinggames/rts/gameFramework/MusicFactory
@@ -4421,20 +4266,15 @@ CLASS com/corrodinggames/rts/gameFramework/e/d com/corrodinggames/rts/gameFramew
 	FIELD g dirPath Ljava/lang/String;
 	FIELD h name Ljava/lang/String;
 	FIELD i mapPath Ljava/lang/String;
-	METHOD d getName ()Ljava/lang/String;
-	METHOD e isZip ()Z
 CLASS com/corrodinggames/rts/gameFramework/e/e com/corrodinggames/rts/gameFramework/file/MergedFileLoader
 	FIELD g fileLoader1 Lcom/corrodinggames/rts/gameFramework/e/c;
 	FIELD h fileLoader2 Lcom/corrodinggames/rts/gameFramework/e/c;
 	FIELD i tag1 Ljava/lang/String;
 	FIELD j tag2 Ljava/lang/String;
-	METHOD o addTag1Prefix (Ljava/lang/String;)Ljava/lang/String;
 	METHOD q fixPath (Ljava/lang/String;)Ljava/lang/String;
 	METHOD r getFileLoaderForPath (Ljava/lang/String;)Lcom/corrodinggames/rts/gameFramework/e/c;
 	METHOD s getPrimaryFileLoaderForPath (Ljava/lang/String;)Lcom/corrodinggames/rts/gameFramework/e/c;
 CLASS com/corrodinggames/rts/gameFramework/e/f com/corrodinggames/rts/gameFramework/file/NullFileLoader
-	METHOD b getPath ()Ljava/lang/String;
-	METHOD b listDir (Ljava/lang/String;Z)[Ljava/lang/String;
 CLASS com/corrodinggames/rts/gameFramework/e/g com/corrodinggames/rts/gameFramework/file/CacheManager
 	FIELD a DEBUG Z
 	METHOD a getCharAsString (C)Ljava/lang/String;
@@ -4711,6 +4551,8 @@ CLASS com/corrodinggames/rts/gameFramework/f/at com/corrodinggames/rts/gameFrame
 CLASS com/corrodinggames/rts/gameFramework/f/au com/corrodinggames/rts/gameFramework/ui/WarLogEntry
 CLASS com/corrodinggames/rts/gameFramework/f/b com/corrodinggames/rts/gameFramework/ui/BackgroundTask
 	FIELD a taskName Ljava/lang/String;
+	METHOD <init> (Ljava/lang/String;)V
+		ARG 1 name
 	METHOD a getTaskName ()Ljava/lang/String;
 	METHOD b run ()V
 CLASS com/corrodinggames/rts/gameFramework/f/c com/corrodinggames/rts/gameFramework/ui/UnitActionTimer
@@ -5176,7 +5018,6 @@ CLASS com/corrodinggames/rts/gameFramework/f/s com/corrodinggames/rts/gameFramew
 	FIELD e drawAsPoints Z
 	FIELD f pointRect Landroid/graphics/RectF;
 	METHOD a addPoint (FF)V
-	METHOD a draw (Lcom/corrodinggames/rts/gameFramework/m/y;)V
 CLASS com/corrodinggames/rts/gameFramework/f/t com/corrodinggames/rts/gameFramework/ui/StrategicPoint
 	FIELD a gridX I
 	FIELD b gridY I
@@ -5210,11 +5051,6 @@ CLASS com/corrodinggames/rts/gameFramework/g/b com/corrodinggames/rts/gameFramew
 	FIELD a name Ljava/lang/String;
 	FIELD b teamColorId I
 	FIELD c teams Ljava/util/ArrayList;
-	METHOD a isGroup ()Z
-	METHOD a getStat (Lcom/corrodinggames/rts/gameFramework/g/f;)I
-	METHOD b getName ()Ljava/lang/String;
-	METHOD c getUnitCount ()I
-	METHOD d getIncome ()I
 CLASS com/corrodinggames/rts/gameFramework/g/c com/corrodinggames/rts/gameFramework/stats/StatGroup
 CLASS com/corrodinggames/rts/gameFramework/g/d com/corrodinggames/rts/gameFramework/stats/GameObjectComparator
 	FIELD a cachedStat I
@@ -5222,11 +5058,6 @@ CLASS com/corrodinggames/rts/gameFramework/g/d com/corrodinggames/rts/gameFramew
 	METHOD b getName (Lcom/corrodinggames/rts/gameFramework/g/f;)V
 CLASS com/corrodinggames/rts/gameFramework/g/e com/corrodinggames/rts/gameFramework/stats/TeamComparator
 	FIELD a team Lcom/corrodinggames/rts/game/n;
-	METHOD a isGroup ()Z
-	METHOD a getStat (Lcom/corrodinggames/rts/gameFramework/g/f;)I
-	METHOD b getName ()Ljava/lang/String;
-	METHOD c getUnitCount ()I
-	METHOD d getIncome ()I
 CLASS com/corrodinggames/rts/gameFramework/g/f com/corrodinggames/rts/gameFramework/stats/StatType
 	METHOD a calculate (Lcom/corrodinggames/rts/game/n;)I
 CLASS com/corrodinggames/rts/gameFramework/h com/corrodinggames/rts/gameFramework/Platform
@@ -5383,6 +5214,9 @@ CLASS com/corrodinggames/rts/gameFramework/j/ab com/corrodinggames/rts/gameFrame
 	FIELD c serverCode I
 	FIELD d password Ljava/lang/String;
 CLASS com/corrodinggames/rts/gameFramework/j/ac com/corrodinggames/rts/gameFramework/network/NetworkCallbacks
+	METHOD a onAllPlayersReady ()V
+	METHOD a onPasswordPrompt (Lcom/corrodinggames/rts/gameFramework/j/ae;)V
+	METHOD b onStartGameEvent ()V
 CLASS com/corrodinggames/rts/gameFramework/j/ad com/corrodinggames/rts/gameFramework/network/NetworkEngine
 	FIELD aC chatLog Lcom/corrodinggames/rts/gameFramework/j/a;
 	FIELD aD connectionAcceptorThread1 Ljava/lang/Thread;
@@ -5392,16 +5226,27 @@ CLASS com/corrodinggames/rts/gameFramework/j/ad com/corrodinggames/rts/gameFrame
 	FIELD ah lastSyncedTick I
 	FIELD aH generalTimer Ljava/util/Timer;
 	FIELD aI keepAliveTimer Lcom/corrodinggames/rts/gameFramework/j/av;
+	FIELD aj pauseOnDesyncEnabled Z
 	FIELD aJ workerThread Ljava/lang/Thread;
+	FIELD ak pausedOnDesync Z
 	FIELD aK udpDiscoveryHandler Lcom/corrodinggames/rts/gameFramework/j/af;
+	FIELD al gamePaused Z
 	FIELD aL localConnection Lcom/corrodinggames/rts/gameFramework/j/c;
 	FIELD am stateChecksum Lcom/corrodinggames/rts/gameFramework/j/ak;
 	FIELD aM sendQueue Ljava/util/concurrent/ConcurrentLinkedQueue;
+	FIELD an syncChecksumSentForFrame Z
 	FIELD aN recvQueue Ljava/util/concurrent/ConcurrentLinkedQueue;
 	FIELD aQ sessionLock Ljava/lang/Object;
 	FIELD aR sessionToken Ljava/lang/String;
+	FIELD aS masterServerGameId Ljava/lang/String;
+	FIELD aT publicIpAddress Ljava/lang/String;
+	FIELD aU publicPortOpen Ljava/lang/Boolean;
+	FIELD aV publicIpLookupSuccess Ljava/lang/Boolean;
 	FIELD aW gameHasBeenStarted Z
 	FIELD ay roomSettings Lcom/corrodinggames/rts/gameFramework/j/ah;
+	FIELD aY returnToBattleroomPending Z
+	FIELD aZ returnToBattleroomCountdownActive Z
+	FIELD ba returnToBattleroomDelaySeconds F
 	FIELD bA engineInstances Ljava/util/ArrayList;
 	FIELD bC connectionLock Ljava/lang/Object;
 	FIELD bE passwordHandler Lcom/corrodinggames/rts/gameFramework/j/ae;
@@ -5413,10 +5258,12 @@ CLASS com/corrodinggames/rts/gameFramework/j/ad com/corrodinggames/rts/gameFrame
 	FIELD bt totalBytesReceived J
 	FIELD bv socket Ljava/net/Socket;
 	FIELD bw serverAddress Ljava/lang/String;
+	FIELD bz registerConnectionSent Z
 	FIELD C isServer Z
 	FIELD d callbacks Lcom/corrodinggames/rts/gameFramework/j/ac;
 	FIELD H isProxyController Z
 	FIELD M banList Ljava/util/ArrayList;
+	FIELD S serverUuid Ljava/lang/String;
 	FIELD t udpPort I
 	FIELD w nextUnitId J
 	FIELD y playerName Ljava/lang/String;
@@ -5424,21 +5271,45 @@ CLASS com/corrodinggames/rts/gameFramework/j/ad com/corrodinggames/rts/gameFrame
 	METHOD a readSyncHeader ()V
 	METHOD a applyChangedSetup (FLjava/lang/String;)V
 	METHOD a getFogModeString (Lcom/corrodinggames/rts/gameFramework/j/as;)V
+	METHOD a processGamePacket (Lcom/corrodinggames/rts/gameFramework/j/au;)V
+		ARG 1 packet
 	METHOD a setCurrentStepRate (Lcom/corrodinggames/rts/gameFramework/j/c;)Lcom/corrodinggames/rts/gameFramework/j/aj;
 	METHOD a writeSyncHeader (Lcom/corrodinggames/rts/gameFramework/j/c;Ljava/lang/String;I)Z
 	METHOD a applyAIDifficultyOverride (Ljava/lang/String;)Ljava/lang/String;
+	METHOD a setPublicIpInfoResult (ZLjava/lang/String;Ljava/lang/Boolean;)V
 	METHOD A setPlayerName ()V
+	METHOD ac getCurrentServerId ()Ljava/lang/String;
+	METHOD aC queueReturnToBattleroom ()V
+	METHOD aD returnToBattleroom ()V
+	METHOD at getPublicIpStatusText ()Ljava/lang/String;
 	METHOD b applyProxyControl ()V
 	METHOD b getAIDifficultyString (Lcom/corrodinggames/rts/game/n;)Z
+	METHOD b (Lcom/corrodinggames/rts/gameFramework/j/au;)Z
+		ARG 1 packet
+	METHOD b disconnectNetworking (Ljava/lang/String;)V
+	METHOD b startServerHosting (Z)Z
 	METHOD B updatePlayerTeamNameForAI ()I
 	METHOD c getDifficultyString ()F
 	METHOD c update (F)V
+		ARG 1 delta
+	METHOD c handlePreregisterInfo (Lcom/corrodinggames/rts/gameFramework/j/au;)V
+		ARG 1 packet
+	METHOD c ensureKeepAliveTimerStarted (Z)V
 	METHOD C getCurrentStepRate ()I
+	METHOD d resetSyncChecksumState ()V
+	METHOD d scheduleReturnToBattleroom (F)V
 	METHOD D resetSyncState ()I
+	METHOD e updateDesyncResyncTimer (F)V
+	METHOD e setGamePaused (Z)V
 	METHOD E getChangeableRoomSettings ()I
 	METHOD F updateAIDifficulty ()V
 	METHOD G getFogDescription ()V
-	METHOD Y getNextUnitId ()V
+	METHOD h sendRegisterConnection (Lcom/corrodinggames/rts/gameFramework/j/c;)V
+	METHOD i sendReturnToBattleroomEvent (Lcom/corrodinggames/rts/gameFramework/j/c;)V
+	METHOD s resetNetworkGameState ()V
+	METHOD X sendRegisterConnectionsToAll ()V
+	METHOD Y regenerateOwnClientId ()V
+	METHOD Z getOwnClientIdHashed ()Ljava/lang/String;
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
 	CLASS 3 AnonymousClass3
@@ -5449,6 +5320,12 @@ CLASS com/corrodinggames/rts/gameFramework/j/ad com/corrodinggames/rts/gameFrame
 	CLASS 7 AnonymousClass7
 	CLASS 8 AnonymousClass8
 CLASS com/corrodinggames/rts/gameFramework/j/ae com/corrodinggames/rts/gameFramework/network/PasswordHandler
+	FIELD b promptMessage Ljava/lang/String;
+	FIELD e dialogTitle Ljava/lang/String;
+	FIELD f confirmButtonLabel Ljava/lang/String;
+	FIELD g cancelButtonLabel Ljava/lang/String;
+	METHOD a cancelPasswordEntry ()V
+	METHOD a submitPassword (Ljava/lang/String;)V
 CLASS com/corrodinggames/rts/gameFramework/j/af com/corrodinggames/rts/gameFramework/network/UdpDiscoveryHandler
 	FIELD a isRunning Z
 	FIELD b datagramSocket Ljava/net/DatagramSocket;
@@ -5457,13 +5334,58 @@ CLASS com/corrodinggames/rts/gameFramework/j/af com/corrodinggames/rts/gameFrame
 	CLASS 1 AnonymousClass1
 CLASS com/corrodinggames/rts/gameFramework/j/ag com/corrodinggames/rts/gameFramework/network/NetworkException
 CLASS com/corrodinggames/rts/gameFramework/j/ah com/corrodinggames/rts/gameFramework/network/GameRoomSettings
+	FIELD a gameModeType Lcom/corrodinggames/rts/gameFramework/j/ai;
+	FIELD b mapPath Ljava/lang/String;
+	FIELD c startingCredits I
+	FIELD d fodMode I
+	FIELD e revealedMap Z
+	FIELD f aiDifficulty I
+	FIELD g startingUnits I
+	FIELD h incomeMultiplier F
+	FIELD i noNukes Z
+	FIELD j unknown Z
+	FIELD k useDisplayedCostAsResourceCost Z
+	FIELD l sharedControl Z
+	FIELD m teamLock Z
+	FIELD n fixedAllyTeams Z
+	FIELD o allowSpectators Z
+	FIELD p roomLock Z
+	FIELD q randomSeed I
+	METHOD a resetToDefaults ()V
+	METHOD a writeToStream (Lcom/corrodinggames/rts/gameFramework/j/as;)V
+		ARG 1 gos
+	METHOD a readFromStream (Lcom/corrodinggames/rts/gameFramework/j/k;)V
+		ARG 1 gis
+	METHOD b getSettingsSummary ()Ljava/lang/String;
 CLASS com/corrodinggames/rts/gameFramework/j/ai com/corrodinggames/rts/gameFramework/network/GameModeType
 	CLASS 1 AnonymousClass1
 	CLASS 2 AnonymousClass2
 	CLASS 3 AnonymousClass3
 CLASS com/corrodinggames/rts/gameFramework/j/aj com/corrodinggames/rts/gameFramework/network/BanEntry
 CLASS com/corrodinggames/rts/gameFramework/j/ak com/corrodinggames/rts/gameFramework/network/GameStateChecksum
+	FIELD a totalChecksum J
+	FIELD b fields Ljava/util/ArrayList;
+	FIELD c unitPositionChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD d unitDirectionChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD e unitHealthChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD f unitIdChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD g waypointChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD h waypointPositionChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD i teamCreditsChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD j unitPathsChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD k unitCountChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD l teamInfoChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD m team1CreditsChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD n team2CreditsChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD o team3CreditsChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD p commandCenterAnimationTimerChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	FIELD q commandCenterAnimationCounterChecksum Lcom/corrodinggames/rts/gameFramework/j/al;
+	METHOD a resetFields ()V
+	METHOD b computeChecksums ()V
 CLASS com/corrodinggames/rts/gameFramework/j/al com/corrodinggames/rts/gameFramework/network/ChecksumField
+	FIELD a label Ljava/lang/String;
+	FIELD b value J
+	FIELD c includeInTotalChecksum Z
 CLASS com/corrodinggames/rts/gameFramework/j/am com/corrodinggames/rts/gameFramework/network/TeamLayoutType
 CLASS com/corrodinggames/rts/gameFramework/j/an com/corrodinggames/rts/gameFramework/network/SocketConnector
 	FIELD a serverAddress Ljava/lang/String;
@@ -5478,12 +5400,17 @@ CLASS com/corrodinggames/rts/gameFramework/j/ao com/corrodinggames/rts/gameFrame
 	FIELD c isRunning Z
 	FIELD d serverSocket Ljava/net/ServerSocket;
 	FIELD e port I
+	FIELD f isUdp Z
 	FIELD g lastAcceptTime J
 	FIELD j acceptLock Ljava/lang/Object;
 	FIELD k pendingConnections Ljava/util/ArrayList;
 	FIELD m acceptedCount I
 	FIELD n pendingLimit I
 	FIELD r networkEngine Lcom/corrodinggames/rts/gameFramework/j/ad;
+	METHOD a recreateServerSocket ()V
+	METHOD a isIpAllowed (Ljava/net/InetAddress;Z)Z
+	METHOD a startSocket (Z)V
+	METHOD b stop ()V
 	CLASS 1 AnonymousClass1
 CLASS com/corrodinggames/rts/gameFramework/j/ap com/corrodinggames/rts/gameFramework/network/ConnectionAttemptTracker
 CLASS com/corrodinggames/rts/gameFramework/j/aq com/corrodinggames/rts/gameFramework/network/MasterServerAuth
@@ -5516,7 +5443,9 @@ CLASS com/corrodinggames/rts/gameFramework/j/as com/corrodinggames/rts/gameFrame
 	METHOD a writeDouble (D)V
 	METHOD a writeFloat (F)V
 	METHOD a writeInt (I)V
-	METHOD a writeBytesWithLength (II)Lcom/corrodinggames/rts/gameFramework/j/au;
+	METHOD a buildPacketData (II)Lcom/corrodinggames/rts/gameFramework/j/au;
+		ARG 1 packetType
+		ARG 2 delayMills
 	METHOD a writeLong (J)V
 	METHOD a writePointFNullable (Landroid/graphics/PointF;)V
 	METHOD a writeTeamIdByte (Lcom/corrodinggames/rts/game/n;)V
@@ -5527,21 +5456,23 @@ CLASS com/corrodinggames/rts/gameFramework/j/as com/corrodinggames/rts/gameFrame
 	METHOD a writeConnectionIdInt (Lcom/corrodinggames/rts/gameFramework/j/c;)V
 	METHOD a writeGameInputStreamWithLength (Lcom/corrodinggames/rts/gameFramework/j/k;)V
 	METHOD a startBlockInternal (Lcom/corrodinggames/rts/gameFramework/utility/m;)V
-	METHOD a writeObjectIdOrMinusOne (Lcom/corrodinggames/rts/gameFramework/w;)V
+	METHOD a writeObjectId (Lcom/corrodinggames/rts/gameFramework/w;)V
 	METHOD a writeByteArrayWithLength (Ljava/io/ByteArrayOutputStream;)V
 	METHOD a writeStreamWithLength (Ljava/io/File;)V
 	METHOD a writeInputStreamWithLength (Ljava/io/InputStream;I)V
-	METHOD a writeEnumOrdinalOrMinusOne (Ljava/lang/Enum;)V
+	METHOD a writeEnumOrdinal (Ljava/lang/Enum;)V
 	METHOD a writeIntNullable (Ljava/lang/Integer;)V
 	METHOD a endBlock (Ljava/lang/String;)V
+		ARG 1 name
 	METHOD a beginBlockInternal (Ljava/lang/String;Z)V
 	METHOD a writeShort (S)V
 	METHOD a writeBoolean (Z)V
 	METHOD b useMainStream ()V
 	METHOD b writeBytesRaw ([B)V
 	METHOD b buildPacketData (I)Lcom/corrodinggames/rts/gameFramework/j/au;
+		ARG 1 packetType
 	METHOD b writeUnitIdIfAlive (Lcom/corrodinggames/rts/game/units/am;)V
-	METHOD b writeExistingObjectIdOrMinusOne (Lcom/corrodinggames/rts/gameFramework/w;)V
+	METHOD b writeExistingObjectId (Lcom/corrodinggames/rts/gameFramework/w;)V
 	METHOD b writeStringNullable (Ljava/lang/String;)V
 	METHOD c getBufferAsString ()Ljava/lang/String;
 	METHOD c writeByte (I)V
@@ -5718,11 +5649,14 @@ CLASS com/corrodinggames/rts/gameFramework/j/k com/corrodinggames/rts/gameFramew
 	FIELD e rootDataInput Ljava/io/DataInputStream;
 	FIELD f currentDataInput Ljava/io/DataInputStream;
 	FIELD g inputBlockStack Ljava/util/LinkedList;
+	METHOD <init> (Lcom/corrodinggames/rts/gameFramework/j/au;)V
+		ARG 1 packet
 	METHOD a useMainStream ()V
 	METHOD a setProtocolVersion (I)V
 	METHOD a startBlockNamed (Lcom/corrodinggames/rts/gameFramework/j/m;)Lcom/corrodinggames/rts/game/units/am;
 	METHOD a assertMagicShort (Lcom/corrodinggames/rts/gameFramework/utility/m;Ljava/lang/Class;)V
 	METHOD a readBaseUnitWithStatus (Ljava/lang/Class;)Lcom/corrodinggames/rts/gameFramework/w;
+		ARG 1 clazz
 	METHOD b getProtocolVersion ()I
 	METHOD b setMaxBlockSize (I)V
 	METHOD b readEnumOrdinalOrNull (Ljava/lang/Class;)Ljava/lang/Enum;
@@ -5831,7 +5765,7 @@ CLASS com/corrodinggames/rts/gameFramework/j/z com/corrodinggames/rts/gameFramew
 CLASS com/corrodinggames/rts/gameFramework/k com/corrodinggames/rts/gameFramework/path
 CLASS com/corrodinggames/rts/gameFramework/k/a com/corrodinggames/rts/gameFramework/pathfinding/DirectAccessPathNodeArrayList
 	CLASS 1 AnonymousClass1
-CLASS com/corrodinggames/rts/gameFramework/k/b com/corrodinggames/rts/gameFramework/pathfinding/DirectAccessPathNodeArrayList
+CLASS com/corrodinggames/rts/gameFramework/k/b com/corrodinggames/rts/gameFramework/pathfinding/DirectAccessPathNodeArrayListIterator
 CLASS com/corrodinggames/rts/gameFramework/k/c com/corrodinggames/rts/gameFramework/pathfinding/PathPositionProvider
 CLASS com/corrodinggames/rts/gameFramework/k/d com/corrodinggames/rts/gameFramework/pathfinding/FastNodeQueue
 CLASS com/corrodinggames/rts/gameFramework/k/e com/corrodinggames/rts/gameFramework/pathfinding/FastNodeQueue2
@@ -5842,6 +5776,7 @@ CLASS com/corrodinggames/rts/gameFramework/k/i com/corrodinggames/rts/gameFramew
 CLASS com/corrodinggames/rts/gameFramework/k/j com/corrodinggames/rts/gameFramework/pathfinding/NodeQueue
 CLASS com/corrodinggames/rts/gameFramework/k/k com/corrodinggames/rts/gameFramework/pathfinding/Path
 CLASS com/corrodinggames/rts/gameFramework/k/l com/corrodinggames/rts/gameFramework/path/PathEngine
+	METHOD a a (Lcom/corrodinggames/rts/game/units/ao;II)Z
 CLASS com/corrodinggames/rts/gameFramework/k/m com/corrodinggames/rts/gameFramework/pathfinding/PathOpenListPool
 CLASS com/corrodinggames/rts/gameFramework/k/n com/corrodinggames/rts/gameFramework/pathfinding/PathOpenListNode
 CLASS com/corrodinggames/rts/gameFramework/k/o com/corrodinggames/rts/gameFramework/pathfinding/PathSolver
@@ -6707,22 +6642,22 @@ CLASS com/corrodinggames/rts/java/u com/corrodinggames/rts/java/SlickGameHandler
 CLASS com/corrodinggames/rts/java/v com/corrodinggames/rts/java/JavaInputHandler
 CLASS com/Element
 	METHOD clone m29clone ()Ljava/lang/Object;
-CLASS org/a/a/a/a org/librocket/collections/collection/Collection
-CLASS org/a/a/a/b org/librocket/collections/collection/IntCollection
-CLASS org/a/a/a/c org/librocket/collections/collection/LongCollection
-CLASS org/a/a/a/d org/librocket/collections/collection/ShortCollection
-CLASS org/a/a/b/a org/librocket/collections/iterators/Iterable
-CLASS org/a/a/b/b org/librocket/collections/iterators/IntIterable
-CLASS org/a/a/b/c org/librocket/collections/iterators/LongIterable
-CLASS org/a/a/c/a org/librocket/collections/lists/Iterator
-CLASS org/a/a/c/b org/librocket/collections/lists/IntIterator
-CLASS org/a/a/c/c org/librocket/collections/lists/LongIterator
-CLASS org/a/a/c/d org/librocket/collections/lists/ShortIterator
-CLASS org/a/a/d/a org/librocket/collections/maps/Map
-CLASS org/a/a/d/b org/librocket/collections/maps/IntList
-CLASS org/a/a/d/c org/librocket/collections/maps/LongList
-CLASS org/a/a/d/d org/librocket/collections/maps/ShortList
-CLASS org/a/a/e/a org/librocket/collections/sets/ListIterator
-CLASS org/a/a/e/b org/librocket/collections/sets/IntListIterator
-CLASS org/a/a/e/c org/librocket/collections/sets/LongListIterator
-CLASS org/a/a/e/d org/librocket/collections/sets/ShortListIterator
+CLASS org/a/a/a/a org/librocket/collection/collections/Collection
+CLASS org/a/a/a/b org/librocket/collection/collections/IntCollection
+CLASS org/a/a/a/c org/librocket/collection/collections/LongCollection
+CLASS org/a/a/a/d org/librocket/collection/collections/ShortCollection
+CLASS org/a/a/b/a org/librocket/collection/iterators/Iterable
+CLASS org/a/a/b/b org/librocket/collection/iterators/IntIterable
+CLASS org/a/a/b/c org/librocket/collection/iterators/LongIterable
+CLASS org/a/a/c/a org/librocket/collection/lists/Iterator
+CLASS org/a/a/c/b org/librocket/collection/lists/IntIterator
+CLASS org/a/a/c/c org/librocket/collection/lists/LongIterator
+CLASS org/a/a/c/d org/librocket/collection/lists/ShortIterator
+CLASS org/a/a/d/a org/librocket/collection/maps/Map
+CLASS org/a/a/d/b org/librocket/collection/maps/IntList
+CLASS org/a/a/d/c org/librocket/collection/maps/LongList
+CLASS org/a/a/d/d org/librocket/collection/maps/ShortList
+CLASS org/a/a/e/a org/librocket/collection/sets/ListIterator
+CLASS org/a/a/e/b org/librocket/collection/sets/IntListIterator
+CLASS org/a/a/e/c org/librocket/collection/sets/LongListIterator
+CLASS org/a/a/e/d org/librocket/collection/sets/ShortListIterator
